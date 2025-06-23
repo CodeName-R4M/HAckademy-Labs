@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Shield, ArrowLeft, CheckCircle, XCircle, Terminal, BookOpen, Flask } from "lucide-react";
+import { Shield, ArrowLeft, CheckCircle, XCircle, Terminal, BookOpen, Beaker } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Lab = () => {
@@ -235,7 +234,7 @@ SQL injection can lead to:
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
-                  <Flask className="h-5 w-5 text-green-600" />
+                  <Beaker className="h-5 w-5 text-green-600" />
                   <CardTitle>Lab Environment</CardTitle>
                 </div>
                 <CardDescription>
