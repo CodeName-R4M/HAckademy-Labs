@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { useUser } from "../context/UserContext";
+import { signInWithPopup, provider, auth, signOut } from "../utils/firebase";
 
 const Index = () => {
   const topAttacks = [
@@ -61,6 +62,22 @@ const Index = () => {
   const profileRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
 
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (err) {
+      alert("Login failed");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      alert("Logout failed");
+    }
+  };
+
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -95,45 +112,51 @@ const Index = () => {
           </div>
           {/* Right side: profile dropdown */}
           <div className="hidden md:flex gap-2 md:gap-4 w-full md:w-auto justify-end items-center">
-            <div className="relative" ref={profileRef}>
-              <button
-                className="flex items-center gap-2 focus:outline-none"
-                onClick={() => setProfileOpen((open) => !open)}
-              >
-                <img
-                  src={
-                    user?.photoURL
-                      ? user.photoURL
-                      : "https://randomuser.me/api/portraits/men/32.jpg"
-                  }
-                  alt="Profile"
-                  className="w-9 h-9 rounded-full border-2 border-green-400 object-cover"
-                />
-                <span className="font-semibold text-gray-900">
-                  {user?.displayName || "CodeName R4M"}
-                </span>
-              </button>
-              {profileOpen && (
-                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                  <Link
-                    to="/profile"
-                    className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700 text-left"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    Show Profile
-                  </Link>
-                  <button
-                    className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
-                    onClick={() => {
-                      setProfileOpen(false);
-                      // Add your logout logic here
-                    }}
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
+            {user ? (
+              <div className="relative" ref={profileRef}>
+                <button
+                  className="flex items-center gap-2 focus:outline-none"
+                  onClick={() => setProfileOpen((open) => !open)}
+                >
+                  <img
+                    src={
+                      user?.photoURL
+                        ? user.photoURL
+                        : "https://randomuser.me/api/portraits/men/32.jpg"
+                    }
+                    alt="Profile"
+                    className="w-9 h-9 rounded-full border-2 border-green-400 object-cover"
+                  />
+                  <span className="font-semibold text-gray-900">
+                    {user?.displayName || "CodeName R4M"}
+                  </span>
+                </button>
+                {profileOpen && (
+                  <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700 text-left"
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      Show Profile
+                    </Link>
+                    <button
+                      className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        handleLogout();
+                      }}
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Button onClick={handleLogin} className="bg-green-600 text-white">
+                Login
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -152,11 +175,22 @@ const Index = () => {
               advanced - secure your future in cybersecurity.
             </p>
             <div className="flex flex-col md:flex-row gap-3 md:gap-4 justify-center mb-8 md:mb-12">
+              {!user && (
+                <Button
+                  onClick={handleLogin}
+                  size="lg"
+                  variant="outline"
+                  className="border-green-200 text-green-700 hover:bg-green-50 px-6 py-3 text-base md:text-lg w-full md:w-auto"
+                >
+                  Login
+                </Button>
+              )}
               <Link to="/dashboard">
                 <Button
                   size="lg"
                   variant="outline"
                   className="border-green-200 text-green-700 hover:bg-green-50 px-6 py-3 text-base md:text-lg w-full md:w-auto"
+                  disabled={!user}
                 >
                   Browse Labs
                 </Button>
