@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-
+import { fetchGeminiTheory } from "../utils/gemini";
 // Inline Components
 const Button = ({
   children,
@@ -158,10 +158,15 @@ const useToast = () => ({
 const Lab = () => {
   const { labId } = useParams();
   const { toast } = useToast();
+
+  const [geminiSolution, setGeminiSolution] = useState("");
+  const [loadingSolution, setLoadingSolution] = useState(false);
   const [liveInput1, setLiveInput1] = useState("");
   const [liveInput2, setLiveInput2] = useState("");
   const [isCompleted, setIsCompleted] = useState(false);
   const [attempts, setAttempts] = useState(0);
+  const [geminiTheory, setGeminiTheory] = useState("");
+  const [loadingTheory, setLoadingTheory] = useState(false);
 
   // Lab Data
   const labData = {
@@ -600,6 +605,55 @@ Broken authentication allows attackers to compromise user accounts by exploiting
     );
   }
 
+  useEffect(() => {
+    if (currentLab) {
+      setLoadingTheory(true);
+      const prompt = `Write exactly two clear and concise paragraphs explaining the web security vulnerability called "${currentLab.name}". The explanation must be beginner-friendly.
+First paragraph: Describe what the vulnerability is and how it works in simple terms.
+Second paragraph: Give a basic example scenario and list common prevention methods.
+Do not use first-person language, instructions, formatting symbols, or emojis.`;
+
+      fetchGeminiTheory(prompt).then((text) => {
+        setGeminiTheory(text);
+        setLoadingTheory(false);
+      });
+    }
+  }, [labId]);
+
+  useEffect(() => {
+    if (currentLab) {
+      setLoadingSolution(true);
+      const simulationDetails = currentLab.types
+        .map(
+          (type) =>
+            `Type: ${type.name}\nExplanation: ${type.explanation}\nExample: ${type.example}\nHint: ${type.lab.hint}`
+        )
+        .join("\n\n");
+
+      const prompt = `Generate a clear and beginner-friendly walkthrough for solving the web security lab titled "${currentLab.name}".
+The output should be formatted as a list of exactly 4 to 5 steps. Each step must have:
+A short, clear title (like "Find the Input")
+A brief description explaining what to do in that step.
+
+Focus on helping the user:
+1. Identify the vulnerable input.
+2. Test or probe the application behavior.
+3. Perform the attack using basic payloads or changes.
+4. Verify if the attack succeeded.
+5. End with a brief explanation of how to fix or prevent this issue.
+
+Use the following details for context:
+${simulationDetails}
+
+Use short paragraphs. Avoid instructions, greetings, first-person language, markdown, emojis, and formatting symbols like *, -, or #. Output should be plain text only.`;
+
+      fetchGeminiTheory(prompt).then((text) => {
+        setGeminiSolution(text);
+        setLoadingSolution(false);
+      });
+    }
+  }, [labId]);
+
   const handleSubmit = async (endpoint) => {
     setAttempts(attempts + 1);
     try {
@@ -677,7 +731,7 @@ Broken authentication allows attackers to compromise user accounts by exploiting
               </CardHeader>
               <CardContent>
                 <pre className="whitespace-pre-line text-sm text-gray-700">
-                  {currentLab.theory}
+                  {loadingTheory ? "Loading..." : geminiTheory}
                 </pre>
               </CardContent>
             </Card>
@@ -688,16 +742,9 @@ Broken authentication allows attackers to compromise user accounts by exploiting
                 <CardTitle>Walkthrough</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {currentLab.walkthrough?.map((step, i) => (
-                    <div key={i} className="p-3 border rounded-lg">
-                      <div className="font-semibold">{step.title}</div>
-                      <div className="text-sm text-gray-600">
-                        {step.description}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <pre className="whitespace-pre-line text-sm text-blue-900 bg-blue-50 border border-blue-100 rounded p-3 mb-4">
+                  {loadingSolution ? "Loading..." : geminiSolution}
+                </pre>
               </CardContent>
             </Card>
           </TabsContent>
@@ -748,6 +795,19 @@ Broken authentication allows attackers to compromise user accounts by exploiting
                         />
                       </div>
                     ))}
+                    {type.name === "Authentication Bypass" &&
+                      labId === "sql-injection" && (
+                        <div className="mb-4">
+                          <Label>Live SQL Query Preview:</Label>
+                          <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto text-red-700 border border-red-200">
+                            {`SELECT * FROM users WHERE username='${liveInput1}' AND password='${liveInput2}'`}
+                          </pre>
+                          <div className="text-xs text-gray-500 mt-1">
+                            This is how your input is used in the SQL query. Try
+                            entering <strong>admin'--</strong> as username!
+                          </div>
+                        </div>
+                      )}
                     <Button
                       onClick={() => handleSubmit(type.lab.endpoint)}
                       className="w-full mt-4"
