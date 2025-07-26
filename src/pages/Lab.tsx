@@ -690,17 +690,30 @@ Use short paragraphs. Avoid instructions, greetings, first-person language, mark
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/dashboard">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft /> Back to Labs
-            </Button>
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{currentLab.icon}</span>
+        <div className="container mx-auto px-2 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center justify-between">
+            <Link to="/dashboard">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="!px-2 !py-1 text-base sm:text-sm"
+              >
+                <ArrowLeft />
+                <span className="hidden xs:inline">Back to Labs</span>
+              </Button>
+            </Link>
+            <div className="text-sm text-gray-600 sm:hidden">
+              Attempts: {attempts}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-2 sm:mt-0">
+            <span className="text-xl sm:text-2xl">{currentLab.icon}</span>
             <div>
-              <h1 className="text-xl font-bold">{currentLab.name}</h1>
+              <h1 className="text-lg sm:text-xl font-bold">
+                {currentLab.name}
+              </h1>
               <Badge>{currentLab.difficulty}</Badge>
               {isCompleted && (
                 <Badge className="ml-2 bg-emerald-100 text-emerald-700">
@@ -709,130 +722,199 @@ Use short paragraphs. Avoid instructions, greetings, first-person language, mark
               )}
             </div>
           </div>
-          <div className="text-sm text-gray-600">Attempts: {attempts}</div>
+          <div className="text-xs text-gray-600 hidden sm:block">
+            Attempts: {attempts}
+          </div>
         </div>
       </header>
 
-      <div className="container mx-auto p-6 grid lg:grid-cols-2 gap-6">
-        <Tabs defaultValue="theory">
-          <TabsList>
-            <TabsTrigger value="theory">
-              <BookOpen /> Theory
-            </TabsTrigger>
-            <TabsTrigger value="walkthrough">
-              <Terminal /> Walkthrough
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="theory">
-            <Card>
-              <CardHeader>
-                <CardTitle>What is {currentLab.name}?</CardTitle>
-                <CardDescription>{currentLab.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <pre className="whitespace-pre-line text-sm text-gray-700">
-                  {loadingTheory ? "Loading..." : geminiTheory}
-                </pre>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="walkthrough">
-            <Card>
-              <CardHeader>
-                <CardTitle>Walkthrough</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className="whitespace-pre-line text-sm text-blue-900 bg-blue-50 border border-blue-100 rounded p-3 mb-4">
-                  {loadingSolution ? "Loading..." : geminiSolution}
-                </pre>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Beaker /> <CardTitle>Lab Simulation</CardTitle>
-            </div>
-            <CardDescription>
-              Try exploiting each type of this vulnerability below.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {currentLab.types?.map((type, idx) => (
-              <div key={idx} className="border rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge>{type.name}</Badge>
-                  <span className="text-gray-700">{type.explanation}</span>
-                </div>
-                <div className="mb-2">
-                  <strong>Example:</strong>
-                  <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto">
-                    {type.example}
+      {/* Main Content */}
+      <div className="container mx-auto p-2 sm:p-6 grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* Desktop Tabs Section */}
+        <div className="hidden sm:block">
+          <Tabs defaultValue="theory">
+            <TabsList>
+              <TabsTrigger value="theory">
+                <BookOpen /> <span className="ml-1">Theory</span>
+              </TabsTrigger>
+              <TabsTrigger value="walkthrough">
+                <Terminal /> <span className="ml-1">Walkthrough</span>
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="theory">
+              <Card className="rounded-lg shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-base sm:text-lg">
+                    What is {currentLab.name}?
+                  </CardTitle>
+                  <CardDescription className="text-sm sm:text-base">
+                    {currentLab.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <pre className="whitespace-pre-line text-sm sm:text-base text-gray-700 bg-gray-50 rounded-md p-3 overflow-x-auto">
+                    {loadingTheory ? "Loading..." : geminiTheory}
                   </pre>
-                </div>
-                <div className="mb-2 text-sm text-gray-600">
-                  {type.lab.hint}
-                </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="walkthrough">
+              <Card className="rounded-lg shadow-md">
+                <CardHeader>
+                  <CardTitle className="text-base sm:text-lg">
+                    Walkthrough
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <pre className="whitespace-pre-line text-blue-900 bg-blue-50 border border-blue-100 rounded p-3 mb-4 text-sm sm:text-base overflow-x-auto">
+                    {loadingSolution ? "Loading..." : geminiSolution}
+                  </pre>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
 
-                {!isCompleted ? (
-                  <>
-                    <Alert>
-                      <Shield /> Enter input to simulate this attack.
-                    </Alert>
-                    {type.formFields.map((label, i) => (
-                      <div key={i}>
-                        <Label>{label}</Label>
-                        <Input
-                          placeholder={`Enter ${label.toLowerCase()}`}
-                          value={i === 0 ? liveInput1 : liveInput2}
-                          onChange={(e) =>
-                            i === 0
-                              ? setLiveInput1(e.target.value)
-                              : setLiveInput2(e.target.value)
-                          }
-                        />
-                      </div>
-                    ))}
-                    {type.name === "Authentication Bypass" &&
-                      labId === "sql-injection" && (
-                        <div className="mb-4">
-                          <Label>Live SQL Query Preview:</Label>
-                          <pre className="bg-gray-100 p-2 rounded text-xs overflow-x-auto text-red-700 border border-red-200">
-                            {`SELECT * FROM users WHERE username='${liveInput1}' AND password='${liveInput2}'`}
-                          </pre>
-                          <div className="text-xs text-gray-500 mt-1">
-                            This is how your input is used in the SQL query. Try
-                            entering <strong>admin'--</strong> as username!
-                          </div>
-                        </div>
-                      )}
-                    <Button
-                      onClick={() => handleSubmit(type.lab.endpoint)}
-                      className="w-full mt-4"
-                    >
-                      Submit
-                    </Button>
-                  </>
-                ) : (
-                  <div className="text-center py-6">
-                    <CheckCircle className="h-16 w-16 text-green-600 mx-auto" />
-                    <h3 className="text-xl font-bold mt-4">
-                      Challenge Completed!
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      You have successfully demonstrated the vulnerability.
-                    </p>
-                    <Link to="/dashboard">
-                      <Button className="mt-4">Back to Dashboard</Button>
-                    </Link>
-                  </div>
-                )}
-              </div>
+        {/* Main Lab Tasks Section */}
+        <div>
+          {/* Mobile: Show only task names */}
+          <div className="sm:hidden space-y-3">
+            {currentLab.types?.map((type, idx) => (
+              <Card
+                key={idx}
+                className="rounded-lg shadow-md p-3 flex items-center"
+              >
+                <Badge className="mr-2">{type.name}</Badge>
+                <span className="text-base font-medium">
+                  {type.explanation}
+                </span>
+              </Card>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+          {/* Desktop: Show full simulation as before */}
+          <div className="hidden sm:block">
+            <Card className="rounded-lg shadow-md">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Beaker />{" "}
+                  <CardTitle className="text-base sm:text-lg">
+                    Lab Simulation
+                  </CardTitle>
+                </div>
+                <CardDescription className="text-sm sm:text-base">
+                  Try exploiting each type of this vulnerability below.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 sm:space-y-6">
+                {currentLab.types?.map((type, idx) => (
+                  <div
+                    key={idx}
+                    className="border rounded-lg p-3 sm:p-4 bg-white shadow-sm mb-4"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
+                      <Badge>{type.name}</Badge>
+                      <span className="text-gray-700 text-sm sm:text-base">
+                        {type.explanation}
+                      </span>
+                    </div>
+                    <div className="mb-2">
+                      <strong className="text-xs sm:text-sm">Example:</strong>
+                      <pre className="bg-gray-100 p-2 rounded text-xs sm:text-sm overflow-x-auto">
+                        {type.example}
+                      </pre>
+                    </div>
+                    <div className="mb-2 text-xs sm:text-sm text-gray-600">
+                      {type.lab.hint}
+                    </div>
+
+                    {!isCompleted ? (
+                      <>
+                        <Alert>
+                          <Shield />{" "}
+                          <span className="text-xs sm:text-sm">
+                            Enter input to simulate this attack.
+                          </span>
+                        </Alert>
+                        {type.formFields.map((label, i) => (
+                          <div key={i} className="mb-2">
+                            <Label>{label}</Label>
+                            <Input
+                              placeholder={`Enter ${label.toLowerCase()}`}
+                              value={i === 0 ? liveInput1 : liveInput2}
+                              onChange={(e) =>
+                                i === 0
+                                  ? setLiveInput1(e.target.value)
+                                  : setLiveInput2(e.target.value)
+                              }
+                              className="text-base sm:text-sm"
+                            />
+                          </div>
+                        ))}
+                        {type.name === "Authentication Bypass" &&
+                          labId === "sql-injection" && (
+                            <div className="mb-4">
+                              <Label>Live SQL Query Preview:</Label>
+                              <pre className="bg-gray-100 p-2 rounded text-xs sm:text-sm overflow-x-auto text-red-700 border border-red-200">
+                                {`SELECT * FROM users WHERE username='${liveInput1}' AND password='${liveInput2}'`}
+                              </pre>
+                              <div className="text-xs text-gray-500 mt-1">
+                                This is how your input is used in the SQL query.
+                                Try entering <strong>admin'--</strong> as
+                                username!
+                              </div>
+                            </div>
+                          )}
+                        <Button
+                          onClick={() => handleSubmit(type.lab.endpoint)}
+                          className="w-full py-3 mt-4 text-base sm:text-sm"
+                        >
+                          Submit
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="text-center py-6">
+                        <CheckCircle className="h-12 w-12 sm:h-16 sm:w-16 text-green-600 mx-auto" />
+                        <h3 className="text-lg sm:text-xl font-bold mt-4">
+                          Challenge Completed!
+                        </h3>
+                        <p className="text-sm sm:text-base text-gray-600">
+                          You have successfully demonstrated the vulnerability.
+                        </p>
+                        <Link to="/dashboard">
+                          <Button className="mt-4 w-full sm:w-auto">
+                            Back to Dashboard
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Bottom App Bar for Tabs */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-inner flex sm:hidden z-50">
+        <button
+          className="flex-1 py-3 flex flex-col items-center justify-center text-blue-600"
+          onClick={() =>
+            alert("Show Theory (implement modal or drawer if needed)")
+          }
+        >
+          <BookOpen />
+          <span className="text-xs mt-1">Theory</span>
+        </button>
+        <button
+          className="flex-1 py-3 flex flex-col items-center justify-center text-blue-600"
+          onClick={() =>
+            alert("Show Walkthrough (implement modal or drawer if needed)")
+          }
+        >
+          <Terminal />
+          <span className="text-xs mt-1">Walkthrough</span>
+        </button>
       </div>
     </div>
   );

@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../utils/firebase";
-import { updateProfile } from "firebase/auth";
+import { updateProfile, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
-import { Shield, Award } from "lucide-react";
+import { Shield, Award, LogOut, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const user = auth.currentUser;
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [points, setPoints] = useState(0);
@@ -19,6 +21,7 @@ export default function Profile() {
     bio: "",
     avatar: user?.photoURL || "https://randomuser.me/api/portraits/men/32.jpg",
   });
+  const [originalForm, setOriginalForm] = useState(form);
 
   // Load extra profile data (bio, points, problemsSolved) from Firestore
   useEffect(() => {
@@ -29,6 +32,12 @@ export default function Profile() {
         if (snap.exists()) {
           const data = snap.data();
           setForm((prev) => ({
+            ...prev,
+            bio: data.bio || "",
+            avatar:
+              user.photoURL || "https://randomuser.me/api/portraits/men/32.jpg",
+          }));
+          setOriginalForm((prev) => ({
             ...prev,
             bio: data.bio || "",
             avatar:
@@ -66,12 +75,10 @@ export default function Profile() {
     setLoading(true);
     try {
       if (user) {
-        // Update Firebase Auth profile
         await updateProfile(user, {
           displayName: form.name,
           photoURL: form.avatar,
         });
-        // Update Firestore profile (bio, points, problemsSolved)
         const userRef = doc(db, "users", user.uid);
         await setDoc(
           userRef,
@@ -84,6 +91,7 @@ export default function Profile() {
           { merge: true }
         );
         setEditing(false);
+        setOriginalForm(form); // <-- Add this line
         alert("Profile updated!");
       }
     } catch (err) {
@@ -93,10 +101,26 @@ export default function Profile() {
     }
   };
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate("/login");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white flex flex-col items-center py-10">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md border border-green-100">
-        <div className="flex flex-col items-center mb-6">
+      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md border border-green-100 relative">
+        {/* Back to Home */}
+        <Button
+          type="button"
+          variant="ghost"
+          className="absolute left-4 top-4 flex items-center gap-2 text-green-700 hover:bg-green-50"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Home
+        </Button>
+
+        <div className="flex flex-col items-center mb-6 mt-2">
           <Shield className="h-10 w-10 text-green-600 mb-2" />
           <h2 className="text-2xl font-bold text-gray-900 mb-1">Profile</h2>
           <p className="text-gray-500 text-sm">Manage your account details</p>
@@ -106,7 +130,7 @@ export default function Profile() {
             <img
               src={form.avatar}
               alt="Avatar"
-              className="w-20 h-20 rounded-full border-2 border-green-400 object-cover mb-2 shadow"
+              className="w-24 h-24 rounded-full border-4 border-green-400 object-cover mb-2 shadow-lg"
             />
             {editing && (
               <input
@@ -158,18 +182,19 @@ export default function Profile() {
             />
           </div>
           <div className="flex items-center gap-4 mt-4">
-            <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded">
+            <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded shadow">
               <Award className="h-5 w-5 text-green-600" />
               <span className="font-semibold text-green-700">
                 {points} Points
               </span>
             </div>
-            <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded">
+            <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded shadow">
               <span className="font-semibold text-green-700">
                 {problemsSolved} Problems Solved
               </span>
             </div>
           </div>
+          <div className="border-t border-green-100 my-6"></div>
           <div className="flex justify-end gap-3 mt-6">
             {editing ? (
               <>
@@ -183,19 +208,44 @@ export default function Profile() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setEditing(false)}
+                  onClick={() => {
+                    setForm(originalForm);
+                    setEditing(false);
+                  }}
                   disabled={loading}
                 >
                   Cancel
                 </Button>
               </>
-            ) : (
-              <Button type="button" onClick={() => setEditing(true)}>
-                Edit Profile
-              </Button>
-            )}
+            ) : null}
           </div>
         </form>
+        {!editing && (
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              type="button"
+              className="bg-green-600 text-white"
+              onClick={() => {
+                setOriginalForm(form);
+                setEditing(true);
+              }}
+            >
+              Edit Profile
+            </Button>
+          </div>
+        )}
+        {/* Logout Button */}
+        <div className="flex justify-center mt-10">
+          <Button
+            type="button"
+            variant="destructive"
+            className="flex items-center gap-2 px-6 py-2"
+            onClick={handleLogout}
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
+        </div>
       </div>
     </div>
   );

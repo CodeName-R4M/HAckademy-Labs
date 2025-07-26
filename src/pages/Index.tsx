@@ -14,6 +14,20 @@ import { useState, useRef, useEffect } from "react";
 import { useUser } from "../context/UserContext";
 import { signInWithPopup, provider, auth, signOut } from "../utils/firebase";
 
+// Add this helper function at the top (outside your component)
+function isImageUrl(url: string) {
+  return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url.split("?")[0]);
+}
+
+function checkImageExists(url: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = url;
+  });
+}
+
 const Index = () => {
   const topAttacks = [
     {
@@ -61,6 +75,10 @@ const Index = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
+  const [imgError, setImgError] = useState<string | null>(null);
+  const [profileImgUrl, setProfileImgUrl] = useState(
+    user?.photoURL || "https://randomuser.me/api/portraits/men/32.jpg"
+  );
 
   const handleLogin = async () => {
     try {
@@ -76,6 +94,22 @@ const Index = () => {
     } catch (err) {
       alert("Logout failed");
     }
+  };
+
+  const handleProfileImageChange = async (url: string) => {
+    if (!isImageUrl(url)) {
+      setImgError(
+        "Please provide a direct image URL ending with .jpg, .png, etc."
+      );
+      return;
+    }
+    setImgError(null);
+    const exists = await checkImageExists(url);
+    if (!exists) {
+      setImgError("Image could not be loaded. Please check the URL.");
+      return;
+    }
+    setProfileImgUrl(url);
   };
 
   // Close dropdown on outside click
@@ -96,7 +130,7 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="container mx-auto px-4 py-4 flex flex-row items-center justify-between gap-4">
           {/* Left side: logo, title, subtitle */}
           <div className="flex flex-col items-start">
             <div className="flex items-center gap-3">
@@ -111,7 +145,7 @@ const Index = () => {
             </span>
           </div>
           {/* Right side: profile dropdown */}
-          <div className="hidden md:flex gap-2 md:gap-4 w-full md:w-auto justify-end items-center">
+          <div className="flex gap-2 md:gap-4 w-auto justify-end items-center">
             {user ? (
               <div className="relative" ref={profileRef}>
                 <button
@@ -119,15 +153,17 @@ const Index = () => {
                   onClick={() => setProfileOpen((open) => !open)}
                 >
                   <img
-                    src={
-                      user?.photoURL
-                        ? user.photoURL
-                        : "https://randomuser.me/api/portraits/men/32.jpg"
-                    }
+                    src={profileImgUrl}
                     alt="Profile"
                     className="w-9 h-9 rounded-full border-2 border-green-400 object-cover"
+                    onError={() =>
+                      setImgError(
+                        "Image could not be loaded. Please check the URL."
+                      )
+                    }
                   />
-                  <span className="font-semibold text-gray-900">
+                  {/* Show name only on md+ screens */}
+                  <span className="font-semibold text-gray-900 hidden md:inline">
                     {user?.displayName || "CodeName R4M"}
                   </span>
                 </button>
@@ -152,11 +188,7 @@ const Index = () => {
                   </div>
                 )}
               </div>
-            ) : (
-              <Button onClick={handleLogin} className="bg-green-600 text-white">
-                Login
-              </Button>
-            )}
+            ) : null}
           </div>
         </div>
       </header>
